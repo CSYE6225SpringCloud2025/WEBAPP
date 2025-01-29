@@ -17,3 +17,11 @@ sequelize.sync()
     });
   })
   .catch((err) => console.error('Error syncing the database:', err));
+
+app.use((err, req, res, next) => {
+  if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
+    console.error("Invalid Json");
+    return res.status(400).send();
+  }
+  next(err);
+});
