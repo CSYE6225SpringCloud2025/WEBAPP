@@ -22,10 +22,10 @@
 4. **Create the `.env` file**  
    Create a `.env` file in the `src` directory and add the following variables:
    ```dotenv
-   DB_HOST=localhost
-   DB_USERNAME=root
-   DB_PASSWORD=abcd*123
-   DB_NAME=healthcheck_db
+   DB_HOST=hostname
+   DB_USERNAME=your_username
+   DB_PASSWORD=your_password
+   DB_NAME=your_db_name
    DB_DIALECT=mysql
 
 5. **Start the application**  
