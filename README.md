@@ -1,6 +1,6 @@
 # WEBAPP
 
-# Health Check API
+# 1. Health Check API
 
 ## Setup Instructions
 
@@ -58,3 +58,67 @@
    - **Database connection failure returning 503**  
      If the database connection is not established, the endpoint will return:
      **503 Service Unavailable**
+
+
+##
+     
+# 2. Automating Application Setup with Shell Script
+
+### DigitalOcean Setup
+
+- **Create an account on DigitalOcean** → login → Click **Create Droplet**.
+- **Create a Droplet (VM)**.
+- Choose **Ubuntu 24.04 LTS** as the OS.
+- Select a **Basic Plan** (with required RAM).
+- Choose a **Region** close to you.
+- Enable **SSH Authentication** (if you have an SSH key added).
+- Click **Create Droplet**.
+
+### Steps to Set Up the Application:
+
+- **Connect to the VM**:
+    ```bash
+    ssh root@your_droplet_ip
+    ```
+
+- **Upload `setup.sh` to Ubuntu**:
+    ```bash
+    scp -i ~/.ssh/DigitalOcean setup.sh root@your_droplet_ip:/root/
+    ```
+
+- **Give Execution Permission to `setup.sh`**:
+    ```bash
+    chmod +x setup.sh
+    ```
+
+- **Upload & Extract `app.zip`**:
+    On your local machine, run:
+    ```bash
+    scp -i ~/.ssh/DigitalOcean app.zip root@your_droplet_ip:/temp/
+    ```
+
+- **Run `setup.sh`**:
+    ```bash
+    ./setup.sh
+    ```
+
+- **To run the application**:
+    - Run `npm install`:
+      ```bash
+      npm i
+      ```
+    - Start the application:
+      ```bash
+      npm start
+      ```
+    - Run the `curl` commands as per the instructions.
+
+---
+
+# 3. Running Test Cases Locally
+
+- Install Jest and Supertest as dev dependencies:
+    ```bash
+    npm install --save-dev jest supertest
+    ```
+
