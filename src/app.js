@@ -6,6 +6,7 @@ const sequelize = require('./config/database');
 // Middleware to parse JSON requests
 app.use(express.json());
 
+// middleware for handling query params
 app.use((req, res, next) => {
   if (Object.keys(req.query).length > 0 || Object.keys(req.params).length > 0) {
     console.error("Request contains query/path parameters");
@@ -31,13 +32,14 @@ sequelize.sync()
   })
   .catch((err) => console.error('Error syncing the database:', err));
 
-
+// middleware to handle invalid routes
   app.use((req, res, next) => {
     const error = new Error('Route not found');
     error.status = 404;
     next(error);  // Pass error to global error handler
   });
 
+  //middleware to handle invalid request body
 app.use((err, req, res, next) => {
   if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
     console.error("Invalid Json");
