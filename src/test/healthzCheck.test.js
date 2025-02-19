@@ -67,9 +67,6 @@ describe('Health Check API', () => {
 
   describe('GET /healthz', () => {
     it('should return 200 for successful health check', async () => {
-      // Mock the HealthCheck.create method to avoid inserting into the DB
-      jest.spyOn(HealthCheck, 'create').mockResolvedValueOnce({});
-    
       const response = await request(app)
         .get('/healthz')
         .expect(200);
@@ -81,6 +78,10 @@ describe('Health Check API', () => {
     
       // Verify console output
       expect(console.log).toHaveBeenCalledWith('Healthz api processed successfully');
+    
+      // Check if a record was inserted into the database
+      const healthCheckRecord = await HealthCheck.findOne();
+      expect(healthCheckRecord).not.toBeNull(); // Ensure the record exists
     });
 
     it('should return 400 when request contains a body', async () => {
