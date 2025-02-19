@@ -21,7 +21,7 @@ jobs:
 
       - name: Install Dependencies
         run: npm install
-        working-directory: ./src  # ✅ Ensure package.json is in src/
+        working-directory: ./src
 
       - name: Start GitHub-Hosted MySQL
         run: |
@@ -41,12 +41,12 @@ jobs:
 
       - name: Configure Database & User
         run: |
-            sudo mysql -uroot -proot <<EOF
+          sudo mysql -uroot -proot <<EOF
             CREATE DATABASE IF NOT EXISTS ${{ secrets.MYSQL_DATABASE }};
-            mysql -e "CREATE USER IF NOT EXISTS '${{ secrets.MYSQL_USER }}'@'localhost' IDENTIFIED BY '${{ secrets.MYSQL_ROOT_PASSWORD }}';
-            mysql -e "GRANT ALL PRIVILEGES ON ${{ secrets.MYSQL_DATABASE }}.* TO '${{ secrets.MYSQL_USER }}'@'localhost';
-            mysql -e "FLUSH PRIVILEGES;
-
+            CREATE USER IF NOT EXISTS '${{ secrets.MYSQL_USER }}'@'localhost' IDENTIFIED BY '${{ secrets.MYSQL_ROOT_PASSWORD }}';
+            GRANT ALL PRIVILEGES ON ${{ secrets.MYSQL_DATABASE }}.* TO '${{ secrets.MYSQL_USER }}'@'localhost';
+            FLUSH PRIVILEGES;
+          EOF
 
       - name: Debug GitHub Secrets
         run: |
@@ -58,16 +58,15 @@ jobs:
         run: |
           echo "DATABASE_URL=mysql://${{ secrets.MYSQL_USER }}:${{ secrets.MYSQL_ROOT_PASSWORD }}@127.0.0.1:3306/${{ secrets.MYSQL_DATABASE }}" >> $GITHUB_ENV
           echo "PORT=${{ secrets.PORT }}" >> $GITHUB_ENV
-        working-directory: ./src  # ✅ Ensure env variables are available in src/
+        working-directory: ./src
 
-      
       - name: Run Database Migrations
-        run: node config/db.js  # ✅ Run db.js from src/config/
-        working-directory: ./src  # ✅ Ensure it runs inside src/
+        run: node config/db.js
+        working-directory: ./src
 
       - name: Run Tests
         run: npm test -- Test/
-        working-directory: ./src  # ✅ Run tests inside src/Test/
+        working-directory: ./src
         env:
           DATABASE_URL: ${{ env.DATABASE_URL }}
           PORT: ${{ env.PORT }}
