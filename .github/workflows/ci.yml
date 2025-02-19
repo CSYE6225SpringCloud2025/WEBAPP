@@ -61,7 +61,7 @@ jobs:
         working-directory: ./src
 
       - name: Run Database Migrations
-        run: node config/db.js
+        run: node config/database.js
         working-directory: ./src
 
       - name: Run Tests
