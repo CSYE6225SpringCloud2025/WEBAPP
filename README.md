@@ -1,5 +1,5 @@
 # WEBAPP
-# hello
+
 # 1. Health Check API
 
 ## Setup Instructions
