@@ -64,9 +64,9 @@ jobs:
           echo "PORT=${{ secrets.PORT }}" >> .env
         working-directory: ./src
 
-      - name: Run Database Migrations
-        run: node config/database.js
-        working-directory: ./src
+      # - name: Run Database Migrations
+      #   run: node config/database.js
+      #   working-directory: ./src
 
       - name: Run Tests
         run: npm test -- Test/
