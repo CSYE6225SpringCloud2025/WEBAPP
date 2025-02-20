@@ -14,7 +14,8 @@ describe('Health Check API', () => {
 
   beforeAll(async () => {
     // Setup test database
-    sequelize = new Sequelize('sqlite::memory:', { logging: false });
+    // sequelize = new Sequelize('sqlite::memory:', { logging: false });
+    sequelize= require('../config/database');
     await sequelize.sync();
 
     // Setup Express app
