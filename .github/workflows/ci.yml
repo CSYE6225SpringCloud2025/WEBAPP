@@ -52,12 +52,12 @@ jobs:
         run: |
           echo "MYSQL_USER=${{ secrets.MYSQL_USER }}"
           echo "MYSQL_DATABASE=${{ secrets.MYSQL_DATABASE }}"
-          echo "MYSQL_ROOT_PASSWORD is set (masked for security)"
+          echo "MYSQL_ROOT_PASSWORD is set (  masked for security)"
 
       - name: Configure Environment Variables
         run: |
           echo "DB_USERNAME=${{ secrets.MYSQL_USER }}" >> .env
-          echo "DB_PASSWORD=${{ secrets.MYSQL_PASSWORD }}" >> .env
+          echo "DB_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}" >> .env
           echo "DB_NAME=${{ secrets.MYSQL_DATABASE }}" >> .env
           echo "DB_HOST=localhost" >> .env
           echo "DB_DIALECT=mysql" >> .env
