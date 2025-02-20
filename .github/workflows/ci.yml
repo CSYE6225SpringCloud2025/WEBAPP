@@ -31,7 +31,7 @@ jobs:
       - name: Wait for MySQL to be ready
         run: |
           for i in {30..0}; do
-            if mysqladmin ping -h "127.0.0.1" --silent; then
+            if mysqladmin ping -h "localhost" --silent; then
               echo "✅ MySQL is ready!"
               break
             fi
@@ -56,12 +56,12 @@ jobs:
 
       - name: Configure Environment Variables
         run: |
-          echo "DB_USERNAME=${{ secrets.MYSQL_USER }}" >> $GITHUB_ENV
-          echo "DB_PASSWORD=${{ secrets.MYSQL_PASSWORD }}" >> $GITHUB_ENV
-          echo "DB_NAME=${{ secrets.MYSQL_DATABASE }}" >> $GITHUB_ENV
-          echo "DB_HOST=127.0.0.1" >> $GITHUB_ENV
-          echo "DB_DIALECT=mysql" >> $GITHUB_ENV
-          echo "PORT=${{ secrets.PORT }}" >> $GITHUB_ENV
+          echo "DB_USERNAME=${{ secrets.MYSQL_USER }}" >> $./src/env
+          echo "DB_PASSWORD=${{ secrets.MYSQL_PASSWORD }}" >> $./src/env
+          echo "DB_NAME=${{ secrets.MYSQL_DATABASE }}" >> $./src/env
+          echo "DB_HOST=localhost" >> $./src/env
+          echo "DB_DIALECT=mysql" >> $./src/env
+          echo "PORT=${{ secrets.PORT }}" >> $./src/env
         working-directory: ./src
 
       - name: Run Database Migrations
