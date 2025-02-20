@@ -56,12 +56,12 @@ jobs:
 
       - name: Configure Environment Variables
         run: |
-          echo "DB_USERNAME=${{ secrets.MYSQL_USER }}" >> $./src/env
-          echo "DB_PASSWORD=${{ secrets.MYSQL_PASSWORD }}" >> $./src/env
-          echo "DB_NAME=${{ secrets.MYSQL_DATABASE }}" >> $./src/env
-          echo "DB_HOST=localhost" >> $./src/env
-          echo "DB_DIALECT=mysql" >> $./src/env
-          echo "PORT=${{ secrets.PORT }}" >> $./src/env
+          echo "DB_USERNAME=${{ secrets.MYSQL_USER }}" >> ./src/env
+          echo "DB_PASSWORD=${{ secrets.MYSQL_PASSWORD }}" >> ./src/env
+          echo "DB_NAME=${{ secrets.MYSQL_DATABASE }}" >> ./src/env
+          echo "DB_HOST=localhost" >> ./src/env
+          echo "DB_DIALECT=mysql" >> ./src/env
+          echo "PORT=${{ secrets.PORT }}" >> ./src/env
         working-directory: ./src
 
       - name: Run Database Migrations
