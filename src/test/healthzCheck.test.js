@@ -30,7 +30,7 @@ describe('Health Check API', () => {
           'Pragma': 'no-cache',
           'X-Content-Type-Options': 'nosniff'
         });
-        return res.status(400).send();
+        return res.status(300).send();
       }
       next();
     });
