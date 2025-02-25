@@ -69,8 +69,11 @@ jobs:
       #   working-directory: ./src
 
       - name: Run Tests
-        run: npm test -- Test/
+        run: npm test
         working-directory: ./src
-        # env:
-        #   DATABASE_URL: ${{ env.DATABASE_URL }}
-        #   PORT: ${{ env.PORT }}
+        env:
+          DB_USERNAME: ${{ secrets.MYSQL_USER }}
+          DB_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
+          DB_NAME: ${{ secrets.MYSQL_DATABASE }}
+          DB_HOST: localhost
+          DB_DIALECT: mysql
