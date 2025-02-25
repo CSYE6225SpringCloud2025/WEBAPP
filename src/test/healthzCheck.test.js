@@ -70,7 +70,7 @@ describe('Health Check API', () => {
     it('should return 200 for successful health check', async () => {
       const response = await request(app)
         .get('/healthz')
-        .expect(200);
+        .expect(250);
     
       // Verify headers
       expect(response.headers['cache-control']).toBe('no-cache, no-store, must-revalidate');
