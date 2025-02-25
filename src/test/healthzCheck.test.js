@@ -88,8 +88,8 @@ describe('Health Check API', () => {
     it('should return 400 when request contains a body', async () => {
       const response = await request(app)
         .get('/healthz')
-        .send({ test: "invalid" })  // Sending a request body
-        .expect(400);
+        .send({ test: "invalid" )  // Sending a request body
+        .expect(300);
     
       expect(response.headers['cache-control']).toBe('no-cache, no-store, must-revalidate');
       expect(response.headers['pragma']).toBe('no-cache');
