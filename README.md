@@ -11,7 +11,7 @@
 
 2. **Navigate to the `src` directory**  
    Run the following command:
-   ```bash
+   ```bash   
    cd src
    
 3. **Install dependencies**  
