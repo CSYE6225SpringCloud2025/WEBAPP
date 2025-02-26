@@ -27,6 +27,11 @@ jobs:
             exit 1
           fi
 
+      - name: Initialize Packer Plugins
+        run: |
+          cd packer
+          packer init .
+
       - name: Run Packer Validate
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
