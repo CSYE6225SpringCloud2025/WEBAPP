@@ -1,0 +1,42 @@
+name: Packer Status Check
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  packer-check:
+    name: Packer Format and Validate
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Setup Packer
+        uses: hashicorp/setup-packer@main
+        with:
+          packer_version: "1.10.2"  # Use a specific version
+
+      - name: Run Packer Format Check
+        run: |
+          packer fmt -check -diff ./packer/image.pkr.hcl
+          if [ $? -ne 0 ]; then
+            echo "Packer format check failed - template needs formatting"
+            exit 1
+          fi
+
+      - name: Run Packer Validate
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          GOOGLE_CREDENTIALS: ${{ secrets.GCP_CREDENTIALS }}
+        run: |
+          cd packer
+          packer validate \
+            -var "aws_region=${{ vars.AWS_REGION }}" \
+            -var "gcp_project_id=${{ secrets.GCP_PROJECT_ID }}" \
+            -var "gcp_zone=${{ vars.GCP_ZONE }}" \
+            -var "db_password=${{ secrets.DB_PASSWORD }}" \
+            image.pkr.hcl
