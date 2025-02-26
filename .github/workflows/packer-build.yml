@@ -1,0 +1,61 @@
+name: Build Packer Image
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    name: Build and Deploy Custom Image
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "20.x"
+
+      - name: Install Dependencies
+        run: npm install
+        working-directory: ./src
+
+      - name: Run Tests
+        run: npm test -- Test/
+        working-directory: ./src
+
+      - name: Build Application Artifact
+        run: |
+          mkdir -p artifacts
+          zip -r artifacts/webapp.zip src/*
+        working-directory: .
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Configure GCP Credentials
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_CREDENTIALS }}
+
+      - name: Setup Packer
+        uses: hashicorp/setup-packer@main
+        with:
+          packer_version: "1.10.2"
+
+      - name: Build Packer Image
+        run: |
+          cd packer
+          packer build \
+            -var "aws_region=${{ vars.AWS_REGION }}" \
+            -var "gcp_project_id=${{ secrets.GCP_PROJECT_ID }}" \
+            -var "gcp_zone=${{ vars.GCP_ZONE }}" \
+            -var "db_password=${{ secrets.DB_PASSWORD }}" \
+            image.pkr.hcl
