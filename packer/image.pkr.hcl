@@ -80,9 +80,9 @@ source "googlecompute" "gcp-image" {
   image_project_id        = var.gcp_project_id
   image_description       = "Custom Ubuntu 20.04 server image"
   image_storage_locations = ["us"]
-  image_name   = "csye6225-webapp"      
-  image_family = "csye6225-webapp-images"
-  ssh_username = "ubuntu"
+  image_name              = "csye6225-webapp"
+  image_family            = "csye6225-webapp-images"
+  ssh_username            = "ubuntu"
 }
 
 build {
