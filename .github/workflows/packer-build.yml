@@ -109,4 +109,5 @@ jobs:
             -var "instance_type=t2.micro" \
             -var "ami_users=[\"${{ secrets.AMI_USERS }}\"]" \
             -var "credentials_file=secret.json" \
+            -var "gcp_project_id=${{ secrets.GCP_PROJECT_ID }}" \
             packer/
