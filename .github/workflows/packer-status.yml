@@ -10,18 +10,26 @@ jobs:
       - uses: actions/checkout@v3
       - name: Install Packer
         uses: hashicorp/setup-packer@v2
+
       - name: Create JSON File from Secret
         run: |
           echo '${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}' | jq '.' > secret.json
+
+      - name: Change to Packer Directory
+        run: cd packer
+        shell: bash
+
       - name: Initialize Packer Plugins
-        run: packer init -upgrade packer/
+        run: packer init -upgrade .
+
       - name: Packer Format Check
-        run: packer fmt -check -diff -recursive packer/
+        run: packer fmt -check -diff -recursive .
+
       - name: Packer Validate
         run: |
           packer validate \
             -var "db_password=${{ secrets.DB_PASSWORD }}" \
             -var "ami_users=[\"000000000000\"]" \
-            -var "credentials_file=secret.json" \
+            -var "credentials_file=../secret.json" \
             -var "gcp_project_id=${{ secrets.GCP_PROJECT_ID }}" \
-            packer/
+            .
