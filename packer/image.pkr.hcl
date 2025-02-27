@@ -54,7 +54,7 @@ variable "gcp_project_id" {
 variable "gcp_zone" {
   type        = string
   description = "GCP Zone where the image build VM will be created"
-  default     = "us-central1-a"
+  default     = "us-east1-d"
 }
 
 #AWS Builder
