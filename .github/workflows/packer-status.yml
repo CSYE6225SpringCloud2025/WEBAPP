@@ -15,15 +15,13 @@ jobs:
         run: |
           echo '${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}' | jq '.' > secret.json
 
-      - name: Change to Packer Directory
-        run: cd packer
-        shell: bash
-
       - name: Initialize Packer Plugins
         run: packer init -upgrade .
+        working-directory: packer
 
       - name: Packer Format Check
         run: packer fmt -check -diff -recursive .
+        working-directory: packer
 
       - name: Packer Validate
         run: |
@@ -33,3 +31,4 @@ jobs:
             -var "credentials_file=../secret.json" \
             -var "gcp_project_id=${{ secrets.GCP_PROJECT_ID }}" \
             .
+        working-directory: packer
