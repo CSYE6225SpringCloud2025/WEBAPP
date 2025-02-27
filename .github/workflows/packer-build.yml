@@ -29,9 +29,9 @@ jobs:
       # Create .env file from secrets
       - name: Create .env File
         run: |
-          echo "DB_NAME=${{ secrets.DB_NAME }}" > src/.env
-          echo "DB_USERNAME=${{ secrets.DB_USERNAME }}" >> src/.env
-          echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> src/.env
+          echo "DB_NAME=${{ secrets.MYSQL_DATABASE }}" > src/.env
+          echo "DB_USERNAME=${{ secrets.MYSQL_USER }}" >> src/.env
+          echo "DB_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}" >> src/.env
           echo "DB_HOST=${{ secrets.DB_HOST }}" >> src/.env
           echo "DB_PORT=${{ secrets.PORT }}" >> src/.env
           echo "DB_DIALECT=${{ secrets.DB_DIALECT }}" >> src/.env
@@ -57,17 +57,17 @@ jobs:
       # Initialize MySQL database as root
       - name: Initialize MySQL Database as Root
         run: |
-          sudo mysql -u"${{ secrets.DB_USERNAME }}" --password="${{ secrets.DB_PASSWORD }}" <<EOF
-          CREATE DATABASE IF NOT EXISTS \`${{ secrets.DB_NAME }}\`;
+          sudo mysql -u"${{ secrets.MYSQL_USER }}" --password="${{ secrets.MYSQL_ROOT_PASSWORD }}" <<EOF
+          CREATE DATABASE IF NOT EXISTS \`${{ secrets.MYSQL_DATABASE }}\`;
           EOF
 
       # Run tests
       - name: Run Tests
         run: npm test
         env:
-          DB_NAME: ${{ secrets.DB_NAME }}
-          DB_USERNAME: ${{ secrets.DB_USERNAME }}
-          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_NAME: ${{ secrets.MYSQL_DATABASE }}
+          DB_USERNAME: ${{ secrets.MYSQL_USER }}
+          DB_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
           DB_HOST: ${{ secrets.DB_HOST }}
           DB_PORT: ${{ secrets.PORT }}
           DB_DIALECT: ${{secrets.DB_DIALECT }}
@@ -105,7 +105,7 @@ jobs:
         run: |
           packer build \
             -var "aws_region=${{ secrets.AWS_REGION }}" \
-            -var "db_password=${{ secrets.DB_PASSWORD }}" \
+            -var "db_password=${{ secrets.MYSQL_ROOT_PASSWORD }}" \
             -var "instance_type=t2.micro" \
             -var "ami_users=[\"${{ secrets.AMI_USERS }}\"]" \
             -var "credentials_file=secret.json" \
