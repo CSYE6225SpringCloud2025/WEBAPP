@@ -1,61 +1,110 @@
-name: Build Packer Image
+name: Packer Build
 
 on:
-  push:
+  pull_request:
     branches:
       - main
 
 jobs:
-  build-and-deploy:
-    name: Build and Deploy Custom Image
+  build:
+    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
-    
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
 
-      - name: Setup Node.js
+    steps:
+      # Checkout repository
+      - uses: actions/checkout@v3
+
+      # Set up Node.js
+      - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: "20.x"
+          node-version: '20'
 
-      - name: Install Dependencies
-        run: npm install
-        working-directory: ./src
+      # Enable MySQL service
+      - name: Enable mysql service
+        run: sudo systemctl start mysql
 
-      - name: Run Tests
-        run: npm test -- Test/
-        working-directory: ./src
-
-      - name: Build Application Artifact
+      # Create .env file from secrets
+      - name: Create .env File
         run: |
-          mkdir -p artifacts
-          zip -r artifacts/webapp.zip src/*
-        working-directory: .
+          echo "DB_NAME=${{ secrets.DB_NAME }}" > src/.env
+          echo "DB_USERNAME=${{ secrets.DB_USERNAME }}" >> src/.env
+          echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> src/.env
+          echo "DB_HOST=${{ secrets.DB_HOST }}" >> src/.env
+          echo "DB_PORT=${{ secrets.PORT }}" >> src/.env
+          echo "DB_DIALECT=${{ secrets.DB_DIALECT }}" >> src/.env
 
+      # Install project dependencies
+      - name: Install Project Dependencies
+        run: npm install
+        working-directory: src
+
+      # Wait for MySQL to be ready
+      - name: Wait for MySQL to be Ready
+        run: |
+          echo "Waiting for MySQL to be ready..."
+          for i in {1..30}; do
+            if mysqladmin ping -h 127.0.0.1 --silent; then
+              echo "MySQL is ready!"
+              break
+            fi
+            echo "Waiting for MySQL..."
+            sleep 2
+          done
+
+      # Initialize MySQL database as root
+      - name: Initialize MySQL Database as Root
+        run: |
+          sudo mysql -u"${{ secrets.DB_USERNAME }}" --password="${{ secrets.DB_PASSWORD }}" <<EOF
+          CREATE DATABASE IF NOT EXISTS \`${{ secrets.DB_NAME }}\`;
+          EOF
+
+      # Run tests
+      - name: Run Tests
+        run: npm test
+        env:
+          DB_NAME: ${{ secrets.DB_NAME }}
+          DB_USERNAME: ${{ secrets.DB_USERNAME }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_PORT: ${{ secrets.PORT }}
+          DB_DIALECT: ${{secrets.DB_DIALECT }}
+        working-directory: src
+
+      # Install Packer
+      - name: Install Packer
+        uses: hashicorp/setup-packer@v2
+
+      # Configure AWS credentials
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ vars.AWS_REGION }}
+          aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Configure GCP Credentials
+      # Authenticate with Google Cloud
+      - name: Authenticate with Google Cloud
         uses: google-github-actions/auth@v2
         with:
-          credentials_json: ${{ secrets.GCP_CREDENTIALS }}
+          credentials_json: "${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}"
 
-      - name: Setup Packer
-        uses: hashicorp/setup-packer@main
-        with:
-          packer_version: "1.10.2"
-
-      - name: Build Packer Image
+      # Create JSON file from secret for Google Cloud authentication
+      - name: Create JSON File from Secret
         run: |
-          cd packer
+          echo '${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}' | jq '.' > secret.json
+
+      # Initialize Packer plugins
+      - name: Initialize Packer Plugins
+        run: packer init -upgrade packer/
+
+      # Build custom image with Packer
+      - name: Build Custom Image
+        run: |
           packer build \
-            -var "aws_region=${{ vars.AWS_REGION }}" \
-            -var "gcp_project_id=${{ secrets.GCP_PROJECT_ID }}" \
-            -var "gcp_zone=${{ vars.GCP_ZONE }}" \
+            -var "aws_region=${{ secrets.AWS_REGION }}" \
             -var "db_password=${{ secrets.DB_PASSWORD }}" \
-            image.pkr.hcl
+            -var "instance_type=t2.micro" \
+            -var "ami_users=[\"${{ secrets.AMI_USERS }}\"]" \
+            -var "credentials_file=secret.json" \
+            packer/
