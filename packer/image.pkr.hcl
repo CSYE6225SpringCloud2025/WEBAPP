@@ -45,6 +45,10 @@ variable "app_port" {
   default = "8080"
 }
 
+variable "credentials_file" {
+  default = "development-creds.json"
+}
+
 # GCP Variables
 variable "gcp_project_id" {
   type        = string
