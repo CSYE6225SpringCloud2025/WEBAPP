@@ -70,7 +70,7 @@ jobs:
           DB_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
           DB_HOST: ${{ secrets.DB_HOST }}
           DB_PORT: ${{ secrets.PORT }}
-          DB_DIALECT: ${{secrets.DB_DIALECT }}
+          DB_DIALECT: ${{ secrets.DB_DIALECT }}
         working-directory: src
 
       # Install Packer
