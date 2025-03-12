@@ -72,7 +72,7 @@ source "amazon-ebs" "aws-image" {
 }
 
 source "googlecompute" "gcp-image" {
-  project_id              = var.gcp_project_id
+  project_id              = var.bad
   source_image            = "ubuntu-2404-noble-amd64-v20250214"
   source_image_family     = "ubuntu-2404-noble-amd64"
   zone                    = var.gcp_zone
