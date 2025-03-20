@@ -2,7 +2,7 @@ const request = require('supertest');
 const express = require('express');
 const { Sequelize } = require('sequelize');
 const healthzRoute = require('../routes/healthz');
-const HealthCheck = require('../models');
+const { HealthCheck } = require('../models');
 
 // Mock console methods
 console.error = jest.fn();
