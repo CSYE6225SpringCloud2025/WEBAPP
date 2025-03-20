@@ -85,16 +85,16 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      # Authenticate with Google Cloud
-      - name: Authenticate with Google Cloud
-        uses: google-github-actions/auth@v2
-        with:
-          credentials_json: "${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}"
+      # # Authenticate with Google Cloud
+      # - name: Authenticate with Google Cloud
+      #   uses: google-github-actions/auth@v2
+      #   with:
+      #     credentials_json: "${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}"
 
-      # Create JSON file from secret for Google Cloud authentication
-      - name: Create JSON File from Secret
-        run: |
-          echo '${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}' | jq '.' > secret.json
+      # # Create JSON file from secret for Google Cloud authentication
+      # - name: Create JSON File from Secret
+      #   run: |
+      #     echo '${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}' | jq '.' > secret.json
 
       # Initialize Packer plugins
       - name: Initialize Packer Plugins
@@ -108,7 +108,5 @@ jobs:
             -var "db_password=${{ secrets.MYSQL_ROOT_PASSWORD }}" \
             -var "instance_type=t2.micro" \
             -var "ami_users=[\"${{ secrets.AMI_USERS }}\"]" \
-            -var "credentials_file=secret.json" \
-            -var "gcp_project_id=${{ secrets.GCP_PROJECT_ID }}" \
             .
         working-directory: packer

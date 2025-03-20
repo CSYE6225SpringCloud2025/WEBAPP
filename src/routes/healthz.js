@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const HealthCheck = require('../models');
+const { HealthCheck } = require('../models');
 const moment = require('moment-timezone');
  
 // healthz endpoint

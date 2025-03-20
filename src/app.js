@@ -1,6 +1,7 @@
 const express = require('express');
 const app = express();
 const healthzRoute = require('./routes/healthz');
+const filesRoute = require('./routes/files');
 const sequelize = require('./config/database');
 
 // Middleware to parse JSON requests
@@ -20,8 +21,10 @@ app.use((req, res, next) => {
   next();
 });
 
-// Use the health check route
+// Use the health and file routes
+app.use(filesRoute);
 app.use(healthzRoute);
+
 
 // Sync the database and start the server
 sequelize.sync()  
