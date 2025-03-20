@@ -26,7 +26,6 @@ jobs:
       - name: Packer Validate
         run: |
           packer validate \
-            -var "db_password=${{ secrets.DB_PASSWORD }}" \
             -var "ami_users=[\"000000000000\"]" \
             .
         working-directory: packer
