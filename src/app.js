@@ -3,6 +3,9 @@ const app = express();
 const healthzRoute = require('./routes/healthz');
 const filesRoute = require('./routes/files');
 const sequelize = require('./config/database');
+const logger = require('./config/logger');
+const StatsD = require('hot-shots');
+const statsd = new StatsD({ port: 8125 });
 
 // Middleware to parse JSON requests
 app.use(express.json());
@@ -10,7 +13,7 @@ app.use(express.json());
 // middleware for handling query params
 app.use((req, res, next) => {
   if (Object.keys(req.query).length > 0 || Object.keys(req.params).length > 0) {
-    console.error("Request contains query/path parameters");
+    logger.warn("Request contains query/path parameters");
     res.set({
       'Cache-Control': 'no-cache, no-store, must-revalidate',
       'Pragma': 'no-cache',
@@ -30,10 +33,13 @@ app.use(healthzRoute);
 sequelize.sync()  
   .then(() => {
     app.listen(8080, () => {
-      console.log('Server is running on http://localhost:8080');
+      logger.info('Server is running on http://localhost:8080');
     });
   })
-  .catch((err) => console.error('Error syncing the database:', err));
+  .catch((err) => {
+    logger.error('Error syncing the database:', err);
+    process.exit(1);
+  });
 
 // middleware to handle invalid routes
   app.use((req, res, next) => {
@@ -45,11 +51,11 @@ sequelize.sync()
   //middleware to handle invalid request body
 app.use((err, req, res, next) => {
   if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
-    console.error("Invalid Json");
+    logger.error("Invalid JSON in request body");
     return res.status(400).send();
   }
   if (err.message === 'Route not found') {
-    console.error("Route not found");
+    logger.warn("Route not found", { path: req.path });
     res.set({
       'Cache-Control': 'no-cache, no-store, must-revalidate',
       'Pragma': 'no-cache',
@@ -57,5 +63,6 @@ app.use((err, req, res, next) => {
     });    
     return res.status(404).send();
   }
+  logger.error("Unhandled error", { error: err });
   next(err);
 });
