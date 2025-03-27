@@ -1,4 +1,10 @@
 const winston = require('winston');
+const fs = require('fs');
+const path = require('path');
+
+if(!fs.existsSync('/var/log/webapp/app.log')){
+  fs.mkdirSync('/var/log/webapp/app.log',{recursive:true});
+}
 
 const logger = winston.createLogger({
   level: 'info',
