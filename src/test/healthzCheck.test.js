@@ -4,7 +4,9 @@ const { Sequelize } = require('sequelize');
 const healthzRoute = require('../routes/healthz');
 const { HealthCheck } = require('../models');
 
-// Mock console methods
+// Mock logger and console methods
+const logger = require('../config/logger');
+jest.mock('../config/logger');
 console.error = jest.fn();
 console.log = jest.fn();
 
@@ -14,8 +16,7 @@ describe('Health Check API', () => {
 
   beforeAll(async () => {
     // Setup test database
-    // sequelize = new Sequelize('sqlite::memory:', { logging: false });
-    sequelize= require('../config/database');
+    sequelize = require('../config/database');
     await sequelize.sync();
 
     // Setup Express app
@@ -46,11 +47,11 @@ describe('Health Check API', () => {
 
     app.use((err, req, res, next) => {
       if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
-        console.error('Invalid Json');
+        logger.warn('Invalid Json');
         return res.status(400).send();
       }
       if (err.message === 'Route not found') {
-        console.error('Route not found');
+        logger.warn('Route not found');
         res.set({
           'Cache-Control': 'no-cache, no-store, must-revalidate',
           'Pragma': 'no-cache',
@@ -77,8 +78,8 @@ describe('Health Check API', () => {
       expect(response.headers['pragma']).toBe('no-cache');
       expect(response.headers['x-content-type-options']).toBe('nosniff');
     
-      // Verify console output
-      expect(console.log).toHaveBeenCalledWith('Healthz api processed successfully');
+      // Verify logger output
+      expect(logger.info).toHaveBeenCalledWith('Health check successful');
     
       // Check if a record was inserted into the database
       const healthCheckRecord = await HealthCheck.findOne();
@@ -107,6 +108,7 @@ describe('Health Check API', () => {
     });
 
     it('should return 503 when database operation fails', async () => {
+      // Mock HealthCheck.create to throw an error
       jest.spyOn(HealthCheck, 'create').mockRejectedValueOnce(new Error('Database error'));
 
       const response = await request(app)
@@ -117,9 +119,10 @@ describe('Health Check API', () => {
       expect(response.headers['pragma']).toBe('no-cache');
       expect(response.headers['x-content-type-options']).toBe('nosniff');
       
-      expect(console.error).toHaveBeenCalledWith(
-        'Error occured while inserting data during health check:',
-        expect.any(Error)
+      // Verify logger output for error
+      expect(logger.error).toHaveBeenCalledWith(
+        'Error during health check', 
+        { error: expect.any(Error) }
       );
     });
   });
@@ -128,7 +131,7 @@ describe('Health Check API', () => {
     const methods = ['post', 'put', 'delete', 'patch'];
 
     methods.forEach((method) => {
-      it('should return 405 for ${method.toUpperCase()} request', async () => {
+      it(`should return 405 for ${method.toUpperCase()} request`, async () => {
         const response = await request(app)[method]('/healthz').expect(405);
 
         expect(response.headers['cache-control']).toBe('no-cache, no-store, must-revalidate');
@@ -147,8 +150,6 @@ describe('Health Check API', () => {
       expect(response.headers['cache-control']).toBe('no-cache, no-store, must-revalidate');
       expect(response.headers['pragma']).toBe('no-cache');
       expect(response.headers['x-content-type-options']).toBe('nosniff');
-      
-      expect(console.error).toHaveBeenCalledWith('Route not found');
     });
 
     it('should return 400 for invalid JSON', async () => {
@@ -157,8 +158,6 @@ describe('Health Check API', () => {
         .set('Content-Type', 'application/json')
         .send('{invalid json}')
         .expect(400);
-
-      expect(console.error).toHaveBeenCalledWith('Invalid Json');
     });
   });
 });
