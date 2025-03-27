@@ -92,12 +92,27 @@ build {
   provisioner "shell" {
     inline = [
       "sudo apt-get update",
-      "sudo apt-get install -y nodejs npm",
+      "sudo apt-get install -y nodejs npm unzip",
       "sudo useradd -r -s /usr/sbin/nologin csye6225 || true",
       "getent group csye6225 || sudo groupadd csye6225",
       "sudo usermod -a -G csye6225 csye6225",
       "sudo mkdir -p /opt/webapp",
-      "sudo cp -r /tmp/app/* /opt/webapp"
+      "sudo cp -r /tmp/app/* /opt/webapp",
+
+      # Install CloudWatch Agent
+      "wget https://s3.amazonaws.com/amazoncloudwatch-agent/linux/amd64/latest/AmazonCloudWatchAgent.zip",
+      "unzip AmazonCloudWatchAgent.zip",
+      "sudo ./install.sh",
+
+      # Create log directory
+      "sudo mkdir -p /var/log/webapp",
+      "sudo chown csye6225:csye6225 /var/log/webapp",
+
+      # Configure CloudWatch Agent
+      "sudo mkdir -p /opt/aws/amazon-cloudwatch-agent/etc",
+      "sudo cp /opt/webapp/config/amazon-cloudwatch-agent.json /opt/aws/amazon-cloudwatch-agent/etc/",
+      "sudo systemctl enable amazon-cloudwatch-agent"
+
     ]
   }
 
