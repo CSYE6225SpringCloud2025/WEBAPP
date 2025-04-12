@@ -54,7 +54,7 @@ variable "app_port" {
 
 #AWS Builder
 source "amazon-ebs" "aws-image" {
-  ami_name      = "csye6225-webapp"
+  ami_name      = "csye6225-webapp-{{timestamp}}"
   instance_type = var.instance_type
   region        = var.aws_region
   source_ami    = var.source_ami
