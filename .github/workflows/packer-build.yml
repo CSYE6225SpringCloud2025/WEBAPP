@@ -177,11 +177,27 @@ jobs:
           echo "Successfully updated the default Launch Template version to: $NEW_VERSION"
         env:
           AWS_REGION: ${{ secrets.AWS_REGION }}
+
+      - name: Find Auto Scaling Group Name
+        id: find-asg
+        run: |
+          # Find the actual ASG name that starts with myproject-asg-
+          ASG_NAME=$(aws autoscaling describe-auto-scaling-groups \
+            --query "AutoScalingGroups[?starts_with(AutoScalingGroupName, 'myproject-asg-')].AutoScalingGroupName" \
+            --output text)
+          if [ -z "$ASG_NAME" ]; then
+            echo "Error: Failed to find Auto Scaling Group starting with myproject-asg-"
+            exit 1
+          fi
+          echo "Auto Scaling Group found: $ASG_NAME"
+          echo "asg-name=$ASG_NAME" >> $GITHUB_OUTPUT
+        env:
+          AWS_REGION: ${{ secrets.AWS_REGION }}
  
       - name: Update Autoscaling Group
         run: |
           aws autoscaling update-auto-scaling-group \
-            --auto-scaling-group-name myproject-asg-* \
+            --auto-scaling-group-name ${{ steps.find-asg.outputs.asg-name }} \
             --launch-template LaunchTemplateId=${{ steps.update-lt.outputs.launch-template-id }},Version=${{ steps.update-lt.outputs.version }}
         env:
           AWS_REGION: ${{ secrets.AWS_REGION }}
@@ -190,7 +206,7 @@ jobs:
         id: refresh
         run: |
           REFRESH_ID=$(aws autoscaling start-instance-refresh \
-            --auto-scaling-group-name myproject-asg-* \
+            --auto-scaling-group-name ${{ steps.find-asg.outputs.asg-name }} \
             --preferences '{"MinHealthyPercentage": 90}' \
             --query 'InstanceRefreshId' \
             --output text)
@@ -202,7 +218,7 @@ jobs:
         run: |
           while true; do
             STATUS=$(aws autoscaling describe-instance-refreshes \
-              --auto-scaling-group-name myproject-asg-* \
+              --auto-scaling-group-name ${{ steps.find-asg.outputs.asg-name }} \
               --instance-refresh-ids ${{ steps.refresh.outputs.InstanceRefreshId }} \
               --query 'InstanceRefreshes[0].Status' \
               --output text)
