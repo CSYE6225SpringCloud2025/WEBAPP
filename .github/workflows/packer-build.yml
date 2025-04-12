@@ -2,14 +2,14 @@ name: Packer Build
 
 on:
   pull_request:
-    types:
-      - closed
+    # types:
+    #   - closed
     branches:
       - main
 
 jobs:
   build:
-    if: github.event.pull_request.merged == true
+    # if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
 
     steps:
@@ -102,10 +102,135 @@ jobs:
 
       # Build custom image with Packer
       - name: Build Custom Image
+        id: build-ami
         run: |
-          packer build \
+          AMI_ID=$(packer build \
             -var "aws_region=${{ secrets.AWS_REGION }}" \
             -var "instance_type=t2.micro" \
             -var "ami_users=[\"${{ secrets.AMI_USERS }}\"]" \
-            .
+            . | grep -o 'ami-[0-9a-f]\{17\}' | tail -n 1)
+          if [ -z "$AMI_ID" ]; then
+            echo "Error: Failed to extract AMI ID from Packer output."
+            exit 1
+          fi
+          echo "AMI ID: $AMI_ID"
+          echo "ami-id=$AMI_ID" >> $GITHUB_OUTPUT
         working-directory: packer
+        env:
+          PACKER_LOG: 1
+
+      - name: Debug AMI ID
+        run: |
+          echo "AMI ID from build-ami: ${{ steps.build-ami.outputs.ami-id }}"
+
+      - name: Configure AWS Credentials for Demo
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_DEMO }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_DEMO }}
+          aws-region: ${{ secrets.AWS_REGION }}
+ 
+      - name: Update Launch Template with New AMI
+        id: update-lt
+        run: |
+          # Step 1: Retrieve Launch Template ID by filtering on name prefix
+          LAUNCH_TEMPLATE_ID=$(aws ec2 describe-launch-templates \
+            --filters "Name=launch-template-name,Values=myproject-lt-*" \
+            --query "LaunchTemplates[0].LaunchTemplateId" \
+            --output text)
+          if [ -z "$LAUNCH_TEMPLATE_ID" ]; then
+            echo "Error: Failed to retrieve the Launch Template ID for myproject-lt-*."
+            exit 1
+          fi
+          echo "Launch Template ID: $LAUNCH_TEMPLATE_ID"
+          echo "launch-template-id=$LAUNCH_TEMPLATE_ID" >> $GITHUB_OUTPUT
+ 
+          # Step 2: Retrieve Latest Launch Template Version
+          LATEST_VERSION=$(aws ec2 describe-launch-template-versions \
+            --launch-template-id "$LAUNCH_TEMPLATE_ID" \
+            --query "LaunchTemplateVersions[-1].VersionNumber" \
+            --output text)
+          if [ -z "$LATEST_VERSION" ]; then
+            echo "Error: Failed to retrieve the latest version number for the Launch Template."
+            exit 1
+          fi
+          echo "Latest Launch Template Version: $LATEST_VERSION"
+ 
+          # Step 3: Create New Launch Template Version with New AMI
+          NEW_VERSION=$(aws ec2 create-launch-template-version \
+            --launch-template-id "$LAUNCH_TEMPLATE_ID" \
+            --source-version "$LATEST_VERSION" \
+            --launch-template-data "{\"ImageId\":\"${{ steps.build-ami.outputs.ami-id }}\"}" \
+            --query "LaunchTemplateVersion.VersionNumber" \
+            --output text)
+          if [ -z "$NEW_VERSION" ]; then
+            echo "Error: Failed to update the Launch Template with the new AMI."
+            exit 1
+          fi
+          echo "New Launch Template Version: $NEW_VERSION"
+          echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
+ 
+          # Step 4: Set the New Version as Default
+          aws ec2 modify-launch-template \
+            --launch-template-id "$LAUNCH_TEMPLATE_ID" \
+            --default-version "$NEW_VERSION"
+          echo "Successfully updated the default Launch Template version to: $NEW_VERSION"
+        env:
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+
+      - name: Find Auto Scaling Group Name
+        id: find-asg
+        run: |
+          # Find the actual ASG name that starts with myproject-asg-
+          ASG_NAME=$(aws autoscaling describe-auto-scaling-groups \
+            --query "AutoScalingGroups[?starts_with(AutoScalingGroupName, 'myproject-asg-')].AutoScalingGroupName" \
+            --output text)
+          if [ -z "$ASG_NAME" ]; then
+            echo "Error: Failed to find Auto Scaling Group starting with myproject-asg-"
+            exit 1
+          fi
+          echo "Auto Scaling Group found: $ASG_NAME"
+          echo "asg-name=$ASG_NAME" >> $GITHUB_OUTPUT
+        env:
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+ 
+      - name: Update Autoscaling Group
+        run: |
+          aws autoscaling update-auto-scaling-group \
+            --auto-scaling-group-name ${{ steps.find-asg.outputs.asg-name }} \
+            --launch-template LaunchTemplateId=${{ steps.update-lt.outputs.launch-template-id }},Version=${{ steps.update-lt.outputs.version }}
+        env:
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+ 
+      - name: Trigger Instance Refresh
+        id: refresh
+        run: |
+          REFRESH_ID=$(aws autoscaling start-instance-refresh \
+            --auto-scaling-group-name ${{ steps.find-asg.outputs.asg-name }} \
+            --preferences '{"MinHealthyPercentage": 90}' \
+            --query 'InstanceRefreshId' \
+            --output text)
+          echo "InstanceRefreshId=$REFRESH_ID" >> $GITHUB_OUTPUT
+        env:
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+ 
+      - name: Wait for Instance Refresh
+        run: |
+          while true; do
+            STATUS=$(aws autoscaling describe-instance-refreshes \
+              --auto-scaling-group-name ${{ steps.find-asg.outputs.asg-name }} \
+              --instance-refresh-ids ${{ steps.refresh.outputs.InstanceRefreshId }} \
+              --query 'InstanceRefreshes[0].Status' \
+              --output text)
+            if [ "$STATUS" == "Successful" ] || [ "$STATUS" == "Failed" ]; then
+              echo "Instance refresh completed with status: $STATUS"
+              if [ "$STATUS" == "Failed" ]; then
+                exit 1
+              fi
+              break
+            fi
+            echo "Waiting for instance refresh... Current status: $STATUS"
+            sleep 30
+          done
+        env:
+          AWS_REGION: ${{ secrets.AWS_REGION }}

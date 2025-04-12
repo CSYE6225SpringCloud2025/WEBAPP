@@ -54,7 +54,7 @@ variable "app_port" {
 
 #AWS Builder
 source "amazon-ebs" "aws-image" {
-  ami_name      = "csye6225-webapp"
+  ami_name      = "csye6225-webapp-{{timestamp}}"
   instance_type = var.instance_type
   region        = var.aws_region
   source_ami    = var.source_ami
@@ -91,7 +91,16 @@ build {
 
   provisioner "shell" {
     inline = [
-      "sudo apt-get update",
+      "sudo apt-get update -y",
+      "sudo apt-get install -y unzip jq",
+
+      "if ! command -v aws &> /dev/null; then",
+      "  curl \"https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip\" -o \"awscliv2.zip\"",
+      "  unzip awscliv2.zip",
+      "  sudo ./aws/install",
+      "  rm -rf awscliv2.zip aws",
+      "fi",
+      "aws --version",
       "sudo apt-get install -y nodejs npm unzip",
       "sudo useradd -r -s /usr/sbin/nologin csye6225 || true",
       "getent group csye6225 || sudo groupadd csye6225",
