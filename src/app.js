@@ -2,7 +2,7 @@ const express = require('express');
 const app = express();
 const healthzRoute = require('./routes/healthz');
 const filesRoute = require('./routes/files');
-// const cicdRoute = require('./routes/cicd');
+const cicdRoute = require('./routes/cicd');
 const sequelize = require('./config/database');
 const logger = require('./config/logger');
 const StatsD = require('hot-shots');
@@ -28,7 +28,7 @@ app.use((req, res, next) => {
 // Use the health and file routes
 app.use(filesRoute);
 app.use(healthzRoute);
-// app.use(cicdRoute);
+app.use(cicdRoute);
 
 
 // Sync the database and start the server

@@ -1,4 +1,4 @@
-/* const express = require('express');
+const express = require('express');
 const router = express.Router();
 const { HealthCheck } = require('../models');
 const moment = require('moment-timezone');
@@ -57,4 +57,4 @@ router.all('/cicd', (req, res) => {
   res.status(405).send();
 });
  
-module.exports = router; */
+module.exports = router;
